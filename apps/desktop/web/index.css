@@ -1,14 +1,14 @@
 :root {
   /* Colors */
-  --bg: #ffffff;
-  --bg-secondary: #f3f3f3;
-  --bg-subtle: #fafafa;
+  --bg: oklch(0.9748 0.009 70);
+  --bg-secondary: oklch(0.95 0.009 70);
+  --bg-subtle: oklch(0.92 0.009 70);
 
-  --fg: #24292f;
-  --fg-secondary: #57606a;
+  --fg: oklch(0.25 0.01 70);
+  --fg-secondary: oklch(0.45 0.01 70);
 
-  --border: #d0d7de;
-  --border-subtle: #e5e7eb;
+  --border: oklch(0.85 0.01 70);
+  --border-subtle: oklch(0.90 0.01 70);
 
   /* Primary Theme Color & Palette */
   --primary: oklch(0.71 0.18 38.65);

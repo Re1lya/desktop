@@ -1,16 +1,19 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Describes whether the public session view is still running.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub enum SessionStatus {
     Running,
     Stopped,
 }
 
 /// Describes the public session payload shared across adapter responses.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct Session {
     pub id: String,
     pub task_id: String,
@@ -20,8 +23,9 @@ pub struct Session {
 }
 
 /// Carries the app-facing payload for session creation requests.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct CreateSessionRequest {
     pub task_id: String,
     pub agent_id: String,
@@ -30,41 +34,47 @@ pub struct CreateSessionRequest {
 }
 
 /// Returns the created session after a successful create request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct CreateSessionResponse {
     pub session: Session,
 }
 
 /// Identifies which session to fetch.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct GetSessionRequest {
     pub session_id: String,
 }
 
 /// Returns one session payload after a successful fetch.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct GetSessionResponse {
     pub session: Session,
 }
 
 /// Requests the full visible session list.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct ListSessionsRequest {}
 
 /// Returns the visible session list.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct ListSessionsResponse {
     pub sessions: Vec<Session>,
 }
 
 /// Carries the full replacement payload for session updates in the first slice.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct UpdateSessionRequest {
     pub session_id: String,
     pub task_id: String,
@@ -74,22 +84,25 @@ pub struct UpdateSessionRequest {
 }
 
 /// Returns the updated session after a successful update request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct UpdateSessionResponse {
     pub session: Session,
 }
 
 /// Identifies which session to delete.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct DeleteSessionRequest {
     pub session_id: String,
 }
 
 /// Returns the deleted session identifier after a successful delete request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "session.ts")]
 pub struct DeleteSessionResponse {
     pub session_id: String,
 }

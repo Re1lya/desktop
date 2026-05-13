@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Describes the public task status shared across adapter boundaries.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub enum TaskStatus {
     Todo,
     Doing,
@@ -10,8 +12,9 @@ pub enum TaskStatus {
 }
 
 /// Describes the public task payload shared across adapter responses.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct Task {
     pub id: String,
     pub project_id: String,
@@ -21,8 +24,9 @@ pub struct Task {
 }
 
 /// Carries the app-facing payload for task creation requests.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct CreateTaskRequest {
     pub project_id: String,
     pub title: String,
@@ -31,41 +35,47 @@ pub struct CreateTaskRequest {
 }
 
 /// Returns the created task after a successful create request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct CreateTaskResponse {
     pub task: Task,
 }
 
 /// Identifies which task to fetch.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct GetTaskRequest {
     pub task_id: String,
 }
 
 /// Returns one task payload after a successful fetch.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct GetTaskResponse {
     pub task: Task,
 }
 
 /// Requests the full visible task list.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct ListTasksRequest {}
 
 /// Returns the visible task list.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct ListTasksResponse {
     pub tasks: Vec<Task>,
 }
 
 /// Carries the full replacement payload for task updates in the first slice.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct UpdateTaskRequest {
     pub task_id: String,
     pub project_id: String,
@@ -75,22 +85,25 @@ pub struct UpdateTaskRequest {
 }
 
 /// Returns the updated task after a successful update request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct UpdateTaskResponse {
     pub task: Task,
 }
 
 /// Identifies which task to delete.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct DeleteTaskRequest {
     pub task_id: String,
 }
 
 /// Returns the deleted task identifier after a successful delete request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "task.ts")]
 pub struct DeleteTaskResponse {
     pub task_id: String,
 }

@@ -23,3 +23,22 @@ pub use worktree::{
     GetWorktreeRequest, GetWorktreeResponse, ListWorktreesRequest, ListWorktreesResponse,
     UpdateWorktreeRequest, UpdateWorktreeResponse, Worktree, WorktreeActivity,
 };
+
+#[cfg(test)]
+mod export_tests {
+    use super::{
+        CreateProjectRequest, CreateSessionRequest, CreateTaskRequest, CreateWorktreeRequest,
+    };
+    use ts_rs::{Config, TS};
+
+    /// Exports every contract family into the shared TypeScript package for frontend consumers.
+    #[test]
+    fn exports_typescript_bindings() {
+        let config = Config::from_env();
+
+        CreateProjectRequest::export_all(&config).unwrap();
+        CreateSessionRequest::export_all(&config).unwrap();
+        CreateTaskRequest::export_all(&config).unwrap();
+        CreateWorktreeRequest::export_all(&config).unwrap();
+    }
+}

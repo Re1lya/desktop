@@ -1,16 +1,19 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Describes whether the public worktree view is active for its task.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub enum WorktreeActivity {
     Inactive,
     Active,
 }
 
 /// Describes the public worktree payload shared across adapter responses.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct Worktree {
     pub id: String,
     pub task_id: String,
@@ -19,8 +22,9 @@ pub struct Worktree {
 }
 
 /// Carries the app-facing payload for worktree creation requests.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct CreateWorktreeRequest {
     pub task_id: String,
     pub branch_name: Option<String>,
@@ -28,41 +32,47 @@ pub struct CreateWorktreeRequest {
 }
 
 /// Returns the created worktree after a successful create request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct CreateWorktreeResponse {
     pub worktree: Worktree,
 }
 
 /// Identifies which worktree to fetch.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct GetWorktreeRequest {
     pub worktree_id: String,
 }
 
 /// Returns one worktree payload after a successful fetch.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct GetWorktreeResponse {
     pub worktree: Worktree,
 }
 
 /// Requests the full visible worktree list.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct ListWorktreesRequest {}
 
 /// Returns the visible worktree list.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct ListWorktreesResponse {
     pub worktrees: Vec<Worktree>,
 }
 
 /// Carries the full replacement payload for worktree updates in the first slice.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct UpdateWorktreeRequest {
     pub worktree_id: String,
     pub task_id: String,
@@ -71,22 +81,25 @@ pub struct UpdateWorktreeRequest {
 }
 
 /// Returns the updated worktree after a successful update request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct UpdateWorktreeResponse {
     pub worktree: Worktree,
 }
 
 /// Identifies which worktree to delete.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct DeleteWorktreeRequest {
     pub worktree_id: String,
 }
 
 /// Returns the deleted worktree identifier after a successful delete request.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
+#[ts(export, export_to = "worktree.ts")]
 pub struct DeleteWorktreeResponse {
     pub worktree_id: String,
 }

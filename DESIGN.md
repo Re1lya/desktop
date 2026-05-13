@@ -10,9 +10,9 @@ The target is an IDE-like AI Chat application mimicking the aesthetics of VSCode
 - **Color Palette**:
   - Primary Accent: `oklch(0.71 0.18 38.65)` (used for highlights and button hovers)
   - Button Base: `oklch(0.66 0.18 38.65)`
-  - Backgrounds: Whites (`#ffffff`) and slight grays (`#f3f3f3`, `#fafafa`) for depth.
-  - Text: Dark grays (`#24292f`, `#57606a`) for hierarchy.
-  - Borders: Subtle dividing lines (`#d0d7de`, `#e5e7eb`).
+  - Backgrounds: Warm whites (`oklch(0.9748 0.009 70)`) and slight grays for depth.
+  - Text: Dark grays (`oklch(0.25 0.01 70)`) for hierarchy.
+  - Borders: Subtle dividing lines (`oklch(0.85 0.01 70)`).
 
 ## Technical Stack
 

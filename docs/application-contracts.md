@@ -7,6 +7,7 @@ The first `project` vertical slice is split across `ora-application`, `ora-contr
 - `ora-contracts` owns serialization-friendly request and response DTOs for `CreateProject`, `GetProject`, `ListProjects`, `UpdateProject`, and `DeleteProject`.
 - `ora-contracts::Project` is the single shared app-facing project payload for the first slice. It exposes `id`, `name`, and `root_path` only.
 - `ora-contracts` keeps Rust field names idiomatic while serializing JSON payloads in `camelCase` for adapter and frontend consumption.
+- `ora-contracts` also exports TypeScript bindings into `packages/contracts/src` so frontend packages can consume the generated contract surface from `@ora/contracts`.
 - `ora-application` owns project CRUD handlers, application errors, repository ports, and the mapping from `ora-domain::Project` into `ora-contracts::Project`.
 - Transport adapters such as `apps/web/server` stay thin: they accept contract requests, delegate to `ora-application`, and return contract responses or application errors.
 

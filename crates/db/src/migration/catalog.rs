@@ -99,7 +99,7 @@ pub fn default_migration_catalog() -> Result<MigrationCatalog, DatabaseError> {
 
 /// Validates that migration versions stay unique and strictly increasing to preserve a linear history.
 fn validate_migration_order(migrations: &[Migration]) -> Result<(), DatabaseError> {
-    let mut previous_version = None;
+    let mut previous_version: Option<&str> = None;
     let mut seen_versions = BTreeMap::new();
 
     for migration in migrations {
