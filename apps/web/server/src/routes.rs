@@ -2,6 +2,10 @@ use crate::app_state::AppState;
 use crate::handlers::{health, projects, sessions, tasks, worktrees};
 use axum::Router;
 use axum::routing::{get, post};
+use ora_contracts::{
+    PROJECT_PATH, PROJECTS_PATH, SESSION_PATH, SESSIONS_PATH, TASK_PATH, TASKS_PATH, WORKTREE_PATH,
+    WORKTREES_PATH,
+};
 
 /// Builds the top-level router for health checks and the persisted CRUD routes.
 pub fn build_router(app_state: AppState) -> Router {
@@ -9,41 +13,38 @@ pub fn build_router(app_state: AppState) -> Router {
         .route("/health/live", get(health::liveness))
         .route("/health/ready", get(health::readiness))
         .route(
-            "/api/projects",
+            PROJECTS_PATH,
             post(projects::create_project).get(projects::list_projects),
         )
         .route(
-            "/api/projects/{project_id}",
+            PROJECT_PATH,
             get(projects::get_project)
                 .put(projects::update_project)
                 .delete(projects::delete_project),
         )
+        .route(TASKS_PATH, post(tasks::create_task).get(tasks::list_tasks))
         .route(
-            "/api/tasks",
-            post(tasks::create_task).get(tasks::list_tasks),
-        )
-        .route(
-            "/api/tasks/{task_id}",
+            TASK_PATH,
             get(tasks::get_task)
                 .put(tasks::update_task)
                 .delete(tasks::delete_task),
         )
         .route(
-            "/api/worktrees",
+            WORKTREES_PATH,
             post(worktrees::create_worktree).get(worktrees::list_worktrees),
         )
         .route(
-            "/api/worktrees/{worktree_id}",
+            WORKTREE_PATH,
             get(worktrees::get_worktree)
                 .put(worktrees::update_worktree)
                 .delete(worktrees::delete_worktree),
         )
         .route(
-            "/api/sessions",
+            SESSIONS_PATH,
             post(sessions::create_session).get(sessions::list_sessions),
         )
         .route(
-            "/api/sessions/{session_id}",
+            SESSION_PATH,
             get(sessions::get_session)
                 .put(sessions::update_session)
                 .delete(sessions::delete_session),

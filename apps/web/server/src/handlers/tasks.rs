@@ -11,6 +11,7 @@ use serde::Deserialize;
 
 /// Carries the request path segment used by task identifier routes.
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskPath {
     task_id: String,
 }

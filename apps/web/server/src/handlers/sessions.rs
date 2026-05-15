@@ -11,6 +11,7 @@ use serde::Deserialize;
 
 /// Carries the request path segment used by session identifier routes.
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SessionPath {
     session_id: String,
 }

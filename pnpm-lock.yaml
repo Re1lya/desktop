@@ -145,6 +145,8 @@ importers:
         specifier: ^8.0.10
         version: 8.0.11(@types/node@24.12.3)(jiti@2.7.0)
 
+  packages/contracts: {}
+
 packages:
 
   '@babel/code-frame@7.29.0':

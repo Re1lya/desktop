@@ -7,9 +7,17 @@ The first `project` vertical slice is split across `ora-application`, `ora-contr
 - `ora-contracts` owns serialization-friendly request and response DTOs for `CreateProject`, `GetProject`, `ListProjects`, `UpdateProject`, and `DeleteProject`.
 - `ora-contracts::Project` is the single shared app-facing project payload for the first slice. It exposes `id`, `name`, and `root_path` only.
 - `ora-contracts` keeps Rust field names idiomatic while serializing JSON payloads in `camelCase` for adapter and frontend consumption.
-- `ora-contracts` also exports TypeScript bindings into `packages/contracts/src` so frontend packages can consume the generated contract surface from `@ora/contracts`.
+- `ora-contracts` also owns the frontend endpoint manifest for the exported HTTP CRUD surface, including operation names, HTTP methods, path templates, path parameters, request types, response types, and JSON body behavior.
+- `ora-contracts` exports TypeScript DTOs plus the generated frontend SDK into `packages/contracts/src` so frontend packages can consume the generated contract surface from `@ora/contracts` and the browser transport from `@ora/contracts/fetch`.
 - `ora-application` owns project CRUD handlers, application errors, repository ports, and the mapping from `ora-domain::Project` into `ora-contracts::Project`.
 - Transport adapters such as `apps/web/server` stay thin: they accept contract requests, delegate to `ora-application`, and return contract responses or application errors.
+
+## Frontend SDK Export
+
+- Run `cargo xtask export-contracts` to regenerate the TypeScript DTOs, endpoint manifest, runtime-agnostic client, and browser `fetch` transport in `packages/contracts`.
+- `Taskfile.yml` exposes the same workflow through `task export-contracts`, and `task test` refreshes the generated package before running the TypeScript and Rust test suites.
+- The generated client builds URLs from contract-owned path metadata, serializes JSON request bodies after removing path parameters, and delegates execution to an injected transport.
+- The generated browser transport resolves endpoint paths against a server `baseUrl` and decodes the shared web-server error envelope into a normalized SDK transport error.
 
 ## Project Slice Notes
 

@@ -11,6 +11,7 @@ use serde::Deserialize;
 
 /// Carries the request path segment used by worktree identifier routes.
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorktreePath {
     worktree_id: String,
 }

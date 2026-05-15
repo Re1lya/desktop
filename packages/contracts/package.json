@@ -3,7 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "scripts": {
+    "test": "tsc -p tsconfig.json && node --test .test-dist/tests/*.test.js"
+  },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./fetch": "./src/fetch.ts"
   }
 }

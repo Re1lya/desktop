@@ -1,8 +1,4 @@
-## Purpose
-
-Define the transport-neutral, serialization-friendly contract surface used by adapters and frontend generation for the first `project` vertical slice.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Project contracts SHALL define the first frontend-facing CRUD protocol
 The system SHALL define request and response DTOs for `CreateProject`, `GetProject`, `ListProjects`, `UpdateProject`, and `DeleteProject` in `ora-contracts`, and it SHALL define the endpoint metadata required to export those project operations into the generated frontend SDK. These DTOs and endpoint definitions SHALL be the transport-neutral contract surface used by adapters and by frontend generation.

@@ -11,6 +11,7 @@ use serde::Deserialize;
 
 /// Carries the request path segment used by project identifier routes.
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectPath {
     project_id: String,
 }

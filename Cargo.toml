@@ -6,6 +6,7 @@ members = [
     "crates/db",
     "crates/domain",
     "crates/logging",
+    "xtask",
 ]
 resolver = "2"
 
