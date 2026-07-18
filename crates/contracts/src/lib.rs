@@ -8,11 +8,22 @@ mod session;
 mod skill;
 mod task;
 
-pub use agent::Agent;
+pub use acp::{
+    CreateTerminalRequest, CreateTerminalResponse, EnvVariable, KillTerminalRequest,
+    KillTerminalResponse, Plan, PlanEntry, PlanEntryPriority, PlanEntryStatus, ReadTextFileRequest,
+    ReadTextFileResponse, ReleaseTerminalRequest, ReleaseTerminalResponse, TerminalExitStatus,
+    TerminalOutputRequest, TerminalOutputResponse, WaitForTerminalExitRequest,
+    WaitForTerminalExitResponse, WriteTextFileRequest, WriteTextFileResponse,
+};
+pub use agent::{
+    Agent, CreateAgentRequest, CreateAgentResponse, DeleteAgentRequest, DeleteAgentResponse,
+    GetAgentRequest, GetAgentResponse, ListAgentsRequest, ListAgentsResponse, UpdateAgentRequest,
+    UpdateAgentResponse,
+};
 pub use frontend::{
-    FrontendEndpoint, FrontendHttpMethod, FrontendPathParam, PROJECT_PATH,
+    AGENT_PATH, AGENTS_PATH, FrontendEndpoint, FrontendHttpMethod, FrontendPathParam, PROJECT_PATH,
     PROJECT_WORK_CONTEXT_OPEN_PATH, PROJECT_WORK_CONTEXT_RENEW_PATH, PROJECTS_PATH, SESSION_PATH,
-    SESSIONS_PATH, TASK_PATH, TASKS_PATH, frontend_endpoints,
+    SESSIONS_PATH, SKILL_PATH, SKILLS_PATH, TASK_PATH, TASKS_PATH, frontend_endpoints,
 };
 pub use project::{
     CreateProjectRequest, CreateProjectResponse, DeleteProjectRequest, DeleteProjectResponse,
@@ -28,7 +39,11 @@ pub use session::{
     GetSessionRequest, GetSessionResponse, ListSessionsRequest, ListSessionsResponse, Session,
     SessionStatus, UpdateSessionRequest, UpdateSessionResponse,
 };
-pub use skill::Skill;
+pub use skill::{
+    CreateSkillRequest, CreateSkillResponse, DeleteSkillRequest, DeleteSkillResponse,
+    GetSkillRequest, GetSkillResponse, ListSkillsRequest, ListSkillsResponse, Skill,
+    UpdateSkillRequest, UpdateSkillResponse,
+};
 use std::path::Path;
 pub use task::{
     CreateTaskRequest, CreateTaskResponse, DeleteTaskRequest, DeleteTaskResponse, GetTaskRequest,
@@ -53,8 +68,38 @@ pub fn export_typescript_bindings_to(
     acp::SetSessionModeParams::export(&config)?;
     acp::AvailableCommand::export(&config)?;
     acp::AvailableCommandInput::export(&config)?;
+    ReadTextFileRequest::export(&config)?;
+    ReadTextFileResponse::export(&config)?;
+    WriteTextFileRequest::export(&config)?;
+    WriteTextFileResponse::export(&config)?;
+    EnvVariable::export(&config)?;
+    TerminalExitStatus::export(&config)?;
+    CreateTerminalRequest::export(&config)?;
+    CreateTerminalResponse::export(&config)?;
+    TerminalOutputRequest::export(&config)?;
+    TerminalOutputResponse::export(&config)?;
+    WaitForTerminalExitRequest::export(&config)?;
+    WaitForTerminalExitResponse::export(&config)?;
+    KillTerminalRequest::export(&config)?;
+    KillTerminalResponse::export(&config)?;
+    ReleaseTerminalRequest::export(&config)?;
+    ReleaseTerminalResponse::export(&config)?;
+    PlanEntryPriority::export(&config)?;
+    PlanEntryStatus::export(&config)?;
+    PlanEntry::export(&config)?;
+    Plan::export(&config)?;
 
     Agent::export(&config)?;
+    CreateAgentRequest::export(&config)?;
+    CreateAgentResponse::export(&config)?;
+    GetAgentRequest::export(&config)?;
+    GetAgentResponse::export(&config)?;
+    ListAgentsRequest::export(&config)?;
+    ListAgentsResponse::export(&config)?;
+    UpdateAgentRequest::export(&config)?;
+    UpdateAgentResponse::export(&config)?;
+    DeleteAgentRequest::export(&config)?;
+    DeleteAgentResponse::export(&config)?;
     Project::export(&config)?;
     CreateProjectRequest::export(&config)?;
     CreateProjectResponse::export(&config)?;
@@ -87,6 +132,16 @@ pub fn export_typescript_bindings_to(
     DeleteSessionResponse::export(&config)?;
 
     Skill::export(&config)?;
+    CreateSkillRequest::export(&config)?;
+    CreateSkillResponse::export(&config)?;
+    GetSkillRequest::export(&config)?;
+    GetSkillResponse::export(&config)?;
+    ListSkillsRequest::export(&config)?;
+    ListSkillsResponse::export(&config)?;
+    UpdateSkillRequest::export(&config)?;
+    UpdateSkillResponse::export(&config)?;
+    DeleteSkillRequest::export(&config)?;
+    DeleteSkillResponse::export(&config)?;
 
     TaskStatus::export(&config)?;
     Task::export(&config)?;

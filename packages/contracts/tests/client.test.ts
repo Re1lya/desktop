@@ -35,7 +35,7 @@ test("builds update URLs from path params and JSON bodies", async () => {
       },
     }),
   );
-  const response = await client.updateTask({
+  const response = await client.task.update({
     taskId: "task-1",
     projectId: "project-1",
     title: "Ship SDK",
@@ -79,7 +79,7 @@ test("omits JSON bodies for path-only operations", async () => {
     }),
   );
 
-  await client.getProject({
+  await client.project.get({
     projectId: "project-1",
   });
 
@@ -90,6 +90,40 @@ test("omits JSON bodies for path-only operations", async () => {
       path: "/api/projects/project-1",
       body: undefined,
       headers: {},
+    },
+  ]);
+});
+
+test("uses a skill id in PUT paths while leaving editable fields in JSON", async () => {
+  const requests: ContractTransportRequest[] = [];
+  const client = createContractsClient(
+    recordingTransport(requests, {
+      skill: {
+        id: "skill-1",
+        name: "code-review",
+        description: "Reviews code",
+      },
+    }),
+  );
+
+  await client.skill.update({
+    skillId: "skill-1",
+    name: "code-review",
+    description: "Reviews code",
+  });
+
+  assert.deepEqual(requests, [
+    {
+      operationName: "updateSkill",
+      method: "PUT",
+      path: "/api/skills/skill-1",
+      body: {
+        name: "code-review",
+        description: "Reviews code",
+      },
+      headers: {
+        "content-type": "application/json",
+      },
     },
   ]);
 });

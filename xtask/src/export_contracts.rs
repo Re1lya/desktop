@@ -12,6 +12,7 @@ pub fn run_export_contracts(workspace_root: &Path) -> Result<(), Box<dyn std::er
     let contracts_source_directory = workspace_root.join("packages/contracts/src");
 
     export_typescript_bindings_to(&contracts_source_directory)?;
+    append_js_extension_to_exported_imports(&contracts_source_directory)?;
     write_contract_runtime_files(&contracts_source_directory, frontend_endpoints())?;
     remove_stale_generated_file(&contracts_source_directory.join("worktree.ts"))?;
 
@@ -45,6 +46,64 @@ fn write_contract_runtime_files(
     )?;
 
     Ok(())
+}
+
+/// Rewrites every ts-rs cross-file import so it resolves under the package `NodeNext` setting.
+///
+/// ts-rs emits extensionless specifiers, which `moduleResolution: "NodeNext"` rejects.
+fn append_js_extension_to_exported_imports(
+    contracts_source_directory: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    for entry in fs::read_dir(contracts_source_directory)? {
+        let path = entry?.path();
+
+        if path.is_dir() {
+            append_js_extension_to_exported_imports(&path)?;
+            continue;
+        }
+
+        if path.extension().is_some_and(|extension| extension == "ts") {
+            let contents = fs::read_to_string(&path)?;
+            let rewritten = append_js_extension_to_relative_specifiers(&contents);
+
+            if rewritten != contents {
+                fs::write(&path, rewritten)?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Appends the `.js` extension to each relative module specifier that still lacks one.
+fn append_js_extension_to_relative_specifiers(contents: &str) -> String {
+    const SPECIFIER_PREFIX: &str = "from \"";
+
+    let mut rewritten = String::with_capacity(contents.len());
+    let mut remainder = contents;
+
+    while let Some(prefix_start) = remainder.find(SPECIFIER_PREFIX) {
+        let specifier_start = prefix_start + SPECIFIER_PREFIX.len();
+        let Some(specifier_length) = remainder[specifier_start..].find('"') else {
+            break;
+        };
+        let specifier_end = specifier_start + specifier_length;
+        let specifier = &remainder[specifier_start..specifier_end];
+
+        rewritten.push_str(&remainder[..specifier_end]);
+
+        if (specifier.starts_with("./") || specifier.starts_with("../"))
+            && !specifier.ends_with(".js")
+        {
+            rewritten.push_str(".js");
+        }
+
+        remainder = &remainder[specifier_end..];
+    }
+
+    rewritten.push_str(remainder);
+
+    rewritten
 }
 
 /// Writes one generated file to disk, creating its parent directory when needed.
@@ -218,22 +277,47 @@ fn render_client_module(endpoints: &[FrontendEndpoint]) -> String {
         "import type { ContractTransport, ContractTransportRequest } from \"./transport.js\";\n\n",
     );
     source.push_str("type ClientRequestShape = object;\n\n");
+    source.push_str("type ClientOperation<Operation extends EndpointOperation> = (\n");
+    source.push_str("  request: RequestByOperation[Operation],\n");
+    source.push_str(") => Promise<ResponseByOperation[Operation]>;\n\n");
     source.push_str("export type ContractsClient = {\n");
-    source.push_str(
-        "  [Operation in EndpointOperation]: (request: RequestByOperation[Operation]) => Promise<ResponseByOperation[Operation]>;\n",
-    );
+
+    for (namespace, namespace_endpoints) in group_endpoints_by_namespace(endpoints) {
+        source.push_str("  ");
+        source.push_str(namespace);
+        source.push_str(": {\n");
+
+        for endpoint in namespace_endpoints {
+            source.push_str("    ");
+            source.push_str(endpoint.member_name);
+            source.push_str(": ClientOperation<\"");
+            source.push_str(endpoint.operation_name);
+            source.push_str("\">;\n");
+        }
+
+        source.push_str("  };\n");
+    }
+
     source.push_str("};\n\n");
     source.push_str(
         "export function createContractsClient(transport: ContractTransport): ContractsClient {\n",
     );
     source.push_str("  return {\n");
 
-    for endpoint in endpoints {
+    for (namespace, namespace_endpoints) in group_endpoints_by_namespace(endpoints) {
         source.push_str("    ");
-        source.push_str(endpoint.operation_name);
-        source.push_str(": (request) => executeOperation(\"");
-        source.push_str(endpoint.operation_name);
-        source.push_str("\", request, transport),\n");
+        source.push_str(namespace);
+        source.push_str(": {\n");
+
+        for endpoint in namespace_endpoints {
+            source.push_str("      ");
+            source.push_str(endpoint.member_name);
+            source.push_str(": (request) => executeOperation(\"");
+            source.push_str(endpoint.operation_name);
+            source.push_str("\", request, transport),\n");
+        }
+
+        source.push_str("    },\n");
     }
 
     source.push_str("  };\n");
@@ -401,6 +485,9 @@ fn render_index_module() -> String {
     source.push_str("export * from \"./client.js\";\n");
     source.push_str("export * from \"./endpoints.js\";\n");
     source.push_str("export * from \"./transport.js\";\n");
+    source.push_str("export * from \"./acp/file.js\";\n");
+    source.push_str("export * from \"./acp/plan.js\";\n");
+    source.push_str("export * from \"./acp/terminal.js\";\n");
     source.push_str("export * from \"./agent.js\";\n");
     source.push_str("export * from \"./acp/session_config_options.js\";\n");
     source.push_str("export * from \"./acp/session_mode.js\";\n");
@@ -412,6 +499,25 @@ fn render_index_module() -> String {
     source.push_str("export * from \"./task.js\";\n");
 
     source
+}
+
+/// Groups endpoints into their client namespaces, preserving the manifest declaration order.
+fn group_endpoints_by_namespace(
+    endpoints: &[FrontendEndpoint],
+) -> Vec<(&'static str, Vec<&FrontendEndpoint>)> {
+    let mut grouped: Vec<(&'static str, Vec<&FrontendEndpoint>)> = Vec::new();
+
+    for endpoint in endpoints {
+        match grouped
+            .iter_mut()
+            .find(|(namespace, _)| *namespace == endpoint.namespace)
+        {
+            Some((_, namespace_endpoints)) => namespace_endpoints.push(endpoint),
+            None => grouped.push((endpoint.namespace, vec![endpoint])),
+        }
+    }
+
+    grouped
 }
 
 /// Collects the TypeScript DTO imports needed by the generated endpoint manifest.
@@ -465,6 +571,26 @@ fn contract_module_for_type(type_name: &str) -> &'static str {
         | "ListSessionsResponse"
         | "UpdateSessionRequest"
         | "UpdateSessionResponse" => "session",
+        "CreateSkillRequest"
+        | "CreateSkillResponse"
+        | "DeleteSkillRequest"
+        | "DeleteSkillResponse"
+        | "GetSkillRequest"
+        | "GetSkillResponse"
+        | "ListSkillsRequest"
+        | "ListSkillsResponse"
+        | "UpdateSkillRequest"
+        | "UpdateSkillResponse" => "skill",
+        "CreateAgentRequest"
+        | "CreateAgentResponse"
+        | "DeleteAgentRequest"
+        | "DeleteAgentResponse"
+        | "GetAgentRequest"
+        | "GetAgentResponse"
+        | "ListAgentsRequest"
+        | "ListAgentsResponse"
+        | "UpdateAgentRequest"
+        | "UpdateAgentResponse" => "agent",
         other => panic!("unknown contract type `{other}`"),
     }
 }
@@ -513,13 +639,34 @@ fn join_types(types: &BTreeSet<&'static str>) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        render_client_module, render_endpoints_module, render_fetch_module, render_index_module,
-        run_export_contracts,
+        append_js_extension_to_relative_specifiers, render_client_module, render_endpoints_module,
+        render_fetch_module, render_index_module, run_export_contracts,
     };
     use ora_contracts::frontend_endpoints;
     use pretty_assertions::assert_eq;
     use std::fs;
     use tempfile::TempDir;
+
+    /// Verifies ts-rs cross-file imports gain the extension `NodeNext` resolution requires.
+    #[test]
+    fn appends_js_extension_to_extensionless_relative_imports() {
+        let rewritten = append_js_extension_to_relative_specifiers(
+            "import type { Plan } from \"./acp/plan\";\nimport type { Task } from \"../task\";\n",
+        );
+
+        assert_eq!(
+            rewritten,
+            "import type { Plan } from \"./acp/plan.js\";\nimport type { Task } from \"../task.js\";\n"
+        );
+    }
+
+    /// Verifies already-suffixed and bare package specifiers survive the rewrite untouched.
+    #[test]
+    fn preserves_specifiers_that_need_no_extension() {
+        let source = "import type { Task } from \"./task.js\";\nimport { z } from \"zod\";\nexport type A = { from: \"./x\" };\n";
+
+        assert_eq!(append_js_extension_to_relative_specifiers(source), source);
+    }
 
     /// Verifies the generated endpoint manifest preserves update-route path metadata.
     #[test]
@@ -538,6 +685,19 @@ mod tests {
 
         assert!(module.contains("Object.entries(requestRecord).filter"));
         assert!(module.contains("missing path parameter"));
+    }
+
+    /// Verifies the generated client groups operations into namespaces over the flat wire names.
+    #[test]
+    fn renders_client_with_namespaced_operations() {
+        let module = render_client_module(frontend_endpoints());
+
+        assert!(module.contains("  project: {\n"));
+        assert!(module.contains("    create: ClientOperation<\"createProject\">;\n"));
+        assert!(module.contains(
+            "      update: (request) => executeOperation(\"updateTask\", request, transport),\n"
+        ));
+        assert!(module.contains("  projectWorkContext: {\n"));
     }
 
     /// Verifies the fetch transport module includes the shared error-decoding helpers.
