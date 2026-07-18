@@ -1,4 +1,5 @@
-mod acp;
+pub mod acp;
+
 mod agent;
 mod frontend;
 mod project;
@@ -57,6 +58,16 @@ pub fn export_typescript_bindings_to(
 ) -> Result<(), ExportError> {
     let config = Config::new().with_out_dir(output_directory.as_ref());
 
+    acp::ConfigOption::export(&config)?;
+    acp::ConfigOptionValue::export(&config)?;
+    acp::SetConfigOptionParams::export(&config)?;
+    acp::ConfigOptionType::export(&config)?;
+    acp::ConfigOptionCurrentValue::export(&config)?;
+    acp::SessionModeState::export(&config)?;
+    acp::SessionMode::export(&config)?;
+    acp::SetSessionModeParams::export(&config)?;
+    acp::AvailableCommand::export(&config)?;
+    acp::AvailableCommandInput::export(&config)?;
     ReadTextFileRequest::export(&config)?;
     ReadTextFileResponse::export(&config)?;
     WriteTextFileRequest::export(&config)?;

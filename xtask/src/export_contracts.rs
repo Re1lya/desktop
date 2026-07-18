@@ -489,6 +489,9 @@ fn render_index_module() -> String {
     source.push_str("export * from \"./acp/plan.js\";\n");
     source.push_str("export * from \"./acp/terminal.js\";\n");
     source.push_str("export * from \"./agent.js\";\n");
+    source.push_str("export * from \"./acp/session_config_options.js\";\n");
+    source.push_str("export * from \"./acp/session_mode.js\";\n");
+    source.push_str("export * from \"./acp/slash_command.js\";\n");
     source.push_str("export * from \"./project.js\";\n");
     source.push_str("export * from \"./project-work-context.js\";\n");
     source.push_str("export * from \"./session.js\";\n");
