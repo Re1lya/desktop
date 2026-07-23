@@ -1,15 +1,9 @@
 use crate::app_state::AppState;
-use crate::config::{ProjectConfig, RuntimeConfig};
+use crate::config::RuntimeConfig;
 use crate::error::WebBootstrapError;
 use crate::service::{FileSystemApi, ProjectWorkContextApi};
-use ora_application::{
-    Clock, OpenProjectWorkContextHandler, ProjectIdGenerator, ProjectRepository,
-    ProjectRepositoryError, UuidProjectIdGenerator, UuidProjectWorkContextIdGenerator,
-};
+use ora_application::Clock;
 use ora_backend::{Backend, BackendBootstrapError, BackendPaths};
-use ora_contracts::{OpenProjectWorkContextRequest, ProjectWorkContextSurface};
-use ora_db::RepositoryPool;
-use ora_domain::{AuditFields, Project};
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -18,24 +12,22 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub fn build_app_state(runtime_config: &RuntimeConfig) -> Result<AppState, WebBootstrapError> {
     let backend = build_backend(
         runtime_config.database().path(),
-        runtime_config.project().work_dir(),
+        runtime_config.worktree().root(),
         runtime_config.file_system().home_directory(),
     )?;
     let pool = backend.repository_pool();
     let clock = SystemClock;
-
-    reconcile_configured_project(&pool, runtime_config.project(), clock)?;
 
     Ok(AppState::new(
         backend,
         Arc::new(FileSystemApi::new(
             runtime_config.file_system().home_directory().to_path_buf(),
         )),
-        Arc::new(ProjectWorkContextApi::new(pool.clone(), clock)),
+        Arc::new(ProjectWorkContextApi::new(pool, clock)),
     ))
 }
 
-/// Builds application state for tests that need SQLite-backed handlers without project reconciliation.
+/// Builds application state for tests from explicit filesystem paths.
 #[cfg(test)]
 pub(crate) fn build_app_state_for_database(
     database_path: &Path,
@@ -55,62 +47,8 @@ pub(crate) fn build_app_state_for_database(
         Arc::new(FileSystemApi::new(
             project_root.parent().unwrap_or(project_root).to_path_buf(),
         )),
-        Arc::new(ProjectWorkContextApi::new(pool.clone(), clock)),
+        Arc::new(ProjectWorkContextApi::new(pool, clock)),
     ))
-}
-
-/// Ensures the configured workspace project exists in persistent storage before readiness.
-fn reconcile_configured_project(
-    pool: &RepositoryPool,
-    project_config: &ProjectConfig,
-    clock: SystemClock,
-) -> Result<(), WebBootstrapError> {
-    let repository = ora_db::SqliteProjectRepository::new(pool.clone());
-    let context_repository = ora_db::SqliteProjectWorkContextRepository::new(pool.clone());
-    let configured_project_path = project_config.path().to_string_lossy().to_string();
-    let existing_project = repository
-        .find_project_by_name(project_config.name())
-        .map_err(project_bootstrap_error)?;
-
-    let project_id = match existing_project {
-        Some(existing_project) if existing_project.root_path == configured_project_path => {
-            Ok(existing_project.id)
-        }
-        Some(existing_project) => Err(WebBootstrapError::ProjectBootstrap {
-            message: format!(
-                "configured project root differs from immutable stored root: {}",
-                existing_project.root_path
-            ),
-        }),
-        None => {
-            let now = clock.now_timestamp_millis();
-
-            repository
-                .create_project(Project::new(
-                    UuidProjectIdGenerator::new().generate_project_id(),
-                    project_config.name(),
-                    configured_project_path,
-                    AuditFields::new(now, now, false),
-                ))
-                .map(|project| project.id)
-                .map_err(project_bootstrap_error)
-        }
-    }?;
-    let handler = OpenProjectWorkContextHandler::new(
-        repository,
-        context_repository,
-        UuidProjectWorkContextIdGenerator::new(),
-        clock,
-    );
-
-    handler
-        .handle(OpenProjectWorkContextRequest {
-            surface: ProjectWorkContextSurface::Web,
-            window_id: "main".to_string(),
-            project_id: project_id.to_string(),
-        })
-        .map(|_| ())
-        .map_err(project_work_context_bootstrap_error)
 }
 
 /// Opens the shared backend while preserving the server's existing bootstrap error variants.
@@ -134,27 +72,9 @@ fn web_backend_bootstrap_error(error: BackendBootstrapError) -> WebBootstrapErro
             WebBootstrapError::DataDirectoryCreate(source)
         }
         BackendBootstrapError::Database(source) => WebBootstrapError::DatabaseBootstrap(source),
-        BackendBootstrapError::AgentRuntime(_) => WebBootstrapError::ProjectBootstrap {
-            message: "failed to initialize agent runtime".to_string(),
-        },
-    }
-}
-
-/// Converts repository-owned bootstrap failures into one stable startup error variant.
-fn project_bootstrap_error(error: ProjectRepositoryError) -> WebBootstrapError {
-    match error {
-        ProjectRepositoryError::OperationFailed(message) => {
-            WebBootstrapError::ProjectBootstrap { message }
+        BackendBootstrapError::AgentRuntime(source) => {
+            WebBootstrapError::BackendRuntimeBootstrap(source)
         }
-    }
-}
-
-/// Converts project work context bootstrap failures into one stable startup error variant.
-fn project_work_context_bootstrap_error(
-    error: ora_application::ApplicationError,
-) -> WebBootstrapError {
-    WebBootstrapError::ProjectBootstrap {
-        message: error.to_string(),
     }
 }
 
@@ -182,10 +102,9 @@ mod tests {
         DatabaseBootstrapper, DatabaseLocation, SqliteProjectRepository,
         SqliteProjectWorkContextRepository, default_migration_catalog,
     };
+    use ora_domain::ProjectWorkContextSurface;
     use pretty_assertions::assert_eq;
     use std::path::Path;
-    use std::thread;
-    use std::time::Duration;
     use tempfile::TempDir;
 
     /// Verifies bootstrap fails cleanly when the configured database path points to a directory.
@@ -204,13 +123,12 @@ mod tests {
         assert!(matches!(error, WebBootstrapError::DatabaseBootstrap(_)));
     }
 
-    /// Verifies runtime bootstrap creates the configured project when no visible row exists yet.
+    /// Verifies runtime bootstrap becomes usable without creating a project or synthetic context.
     #[test]
-    fn creates_configured_project_during_bootstrap() {
+    fn starts_with_an_empty_project_catalog() {
         let temp_dir = TempDir::new().unwrap();
-        let data_dir = temp_dir.path().join("bootstrap-create");
-        let project_path = temp_dir.path().join("workspace").join("ora");
-        let runtime_config = runtime_config(&data_dir, "Ora", &project_path);
+        let data_dir = temp_dir.path().join("empty-bootstrap");
+        let runtime_config = runtime_config(&data_dir);
         let database_path = data_dir.join("ora.sqlite3");
 
         build_app_state(&runtime_config)
@@ -219,108 +137,19 @@ mod tests {
         let repository = bootstrapped_project_repository(&database_path);
         let context_repository = bootstrapped_project_work_context_repository(&database_path);
 
-        assert_eq!(
-            repository
-                .find_project_by_name("Ora")
-                .unwrap()
-                .map(|project| (
-                    project.name,
-                    project.root_path,
-                    project.audit_fields.is_deleted,
-                )),
-            Some((
-                "Ora".to_string(),
-                project_path.to_string_lossy().to_string(),
-                false,
-            ))
-        );
-        let project = repository
-            .find_project_by_name("Ora")
-            .unwrap()
-            .unwrap_or_else(|| panic!("expected configured project to exist after bootstrap"));
-
+        assert_eq!(repository.list_projects().unwrap(), Vec::new());
         assert_eq!(
             context_repository
-                .find_project_work_context(ora_domain::ProjectWorkContextSurface::Web, "main")
-                .unwrap()
-                .map(|context| (context.surface, context.window_id, context.project_id)),
-            Some((
-                ora_domain::ProjectWorkContextSurface::Web,
-                "main".to_string(),
-                project.id,
-            ))
+                .find_project_work_context(ProjectWorkContextSurface::Web, "main")
+                .unwrap(),
+            None
         );
-    }
-
-    /// Verifies runtime bootstrap leaves an already reconciled configured project unchanged.
-    #[test]
-    fn keeps_configured_project_unchanged_when_name_and_path_match() {
-        let temp_dir = TempDir::new().unwrap();
-        let data_dir = temp_dir.path().join("bootstrap-noop");
-        let project_path = temp_dir.path().join("workspace").join("ora");
-        let runtime_config = runtime_config(&data_dir, "Ora", &project_path);
-        let database_path = data_dir.join("ora.sqlite3");
-
-        build_app_state(&runtime_config)
-            .unwrap_or_else(|error| panic!("expected first runtime bootstrap to succeed: {error}"));
-        let repository = bootstrapped_project_repository(&database_path);
-        let original_project = repository
-            .find_project_by_name("Ora")
-            .unwrap()
-            .unwrap_or_else(|| panic!("expected configured project to exist after bootstrap"));
-
-        build_app_state(&runtime_config).unwrap_or_else(|error| {
-            panic!("expected second runtime bootstrap to succeed: {error}")
-        });
-        let repository = bootstrapped_project_repository(&database_path);
-
-        assert_eq!(
-            repository.find_project_by_name("Ora").unwrap(),
-            Some(original_project)
-        );
-    }
-
-    /// Verifies runtime bootstrap rejects path drift because project roots are immutable.
-    #[test]
-    fn rejects_configured_project_path_when_storage_drifts() {
-        let temp_dir = TempDir::new().unwrap();
-        let data_dir = temp_dir.path().join("bootstrap-update");
-        let original_project_path = temp_dir.path().join("workspace").join("ora");
-        let original_runtime_config = runtime_config(&data_dir, "Ora", &original_project_path);
-        let database_path = data_dir.join("ora.sqlite3");
-
-        build_app_state(&original_runtime_config)
-            .unwrap_or_else(|error| panic!("expected first runtime bootstrap to succeed: {error}"));
-        let repository = bootstrapped_project_repository(&database_path);
-        let original_project = repository
-            .find_project_by_name("Ora")
-            .unwrap()
-            .unwrap_or_else(|| panic!("expected configured project to exist after bootstrap"));
-
-        thread::sleep(Duration::from_millis(2));
-
-        let updated_project_path = temp_dir.path().join("workspace").join("ora-renamed");
-        let updated_runtime_config = runtime_config(&data_dir, "Ora", &updated_project_path);
-        let error = match build_app_state(&updated_runtime_config) {
-            Ok(_) => panic!("expected immutable project root mismatch to fail bootstrap"),
-            Err(error) => error,
-        };
-        assert!(error.to_string().contains("immutable stored root"));
-        let repository = bootstrapped_project_repository(&database_path);
-        let stored_project = repository
-            .find_project_by_name("Ora")
-            .unwrap()
-            .unwrap_or_else(|| panic!("expected configured project to remain stored"));
-
-        assert_eq!(stored_project, original_project);
     }
 
     /// Builds one runtime configuration without mutating process environment during tests.
-    fn runtime_config(data_dir: &Path, project_name: &str, project_path: &Path) -> RuntimeConfig {
+    fn runtime_config(data_dir: &Path) -> RuntimeConfig {
         RuntimeConfig::from_reader(|key| match key {
             "ORA_DATA_DIR" => Some(data_dir.to_string_lossy().to_string()),
-            "ORA_PROJECT_NAME" => Some(project_name.to_string()),
-            "ORA_PROJECT_PATH" => Some(project_path.to_string_lossy().to_string()),
             "HOME" => Some(data_dir.to_string_lossy().to_string()),
             _ => None,
         })

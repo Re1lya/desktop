@@ -23,22 +23,14 @@ Startup asks `ora-backend` to bootstrap the database, apply the active migration
 - Worktree root: `<ORA_DATA_DIR>/worktrees`
 - Log file: `<ORA_DATA_DIR>/logs/ora.log`
 
-## Project Configuration
+## Project and Worktree Configuration
 
-The web server also requires a bootstrap project identity:
+The web server does not require a bootstrap project. A new database starts with an empty project
+catalog, and users add repositories through the project CRUD API or Web UI.
 
-- `ORA_PROJECT_NAME`: persisted workspace project name. Required.
-- `ORA_PROJECT_PATH`: persisted workspace root path. Required.
-
-Startup reconciles this configured project into the `projects` table before the runtime is marked ready.
-
-- If no visible project exists with the configured name, startup creates one row.
-- If a visible project exists with the configured name but a different stored path, startup fails because project roots are immutable.
-- If both the configured name and path already match, startup leaves the row unchanged.
-- If `ORA_WORK_DIR` is unset, startup uses a `worktrees/` directory next to the configured SQLite database file.
-- Task creation resolves the project named by the request and provisions linked worktrees under `ORA_WORK_DIR/<full-task-id>`.
+- The global worktree root is `<ORA_DATA_DIR>/worktrees`.
+- Task creation resolves the project identified by the request and provisions linked worktrees under `<ORA_DATA_DIR>/worktrees/<full-task-id>`.
 - Agent Session startup resolves Task → Worktree → branch and then asks Git for the authoritative linked-worktree path to use as the child process cwd.
-- After project reconciliation, startup also opens the synthetic web work context `surface = web`, `window_id = main` for that project and refreshes its lease immediately.
 
 ## Bind Configuration
 
@@ -131,5 +123,5 @@ The Web production build always selects the fetch transport. Development startup
 The current runtime uses a file-backed SQLite database bootstrapped through `ora-db`.
 
 - Data persists across process restarts as long as the same `ORA_DATA_DIR` is reused.
-- Readiness depends on successful database bootstrap, repository-pool construction, bootstrap-project reconciliation, and synthetic web work context reconciliation.
+- Readiness depends on successful database bootstrap, repository-pool construction, and shared backend initialization; an empty project catalog is ready for use.
 - Shared backend failures map into the structured HTTP error envelope using the same public code and message returned by Desktop commands. HTTP alone adds the status code.

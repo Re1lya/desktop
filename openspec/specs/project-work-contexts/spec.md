@@ -7,10 +7,6 @@ Define the persisted project work context contract that tracks which client wind
 ### Requirement: System SHALL persist window-scoped project work contexts
 The system SHALL persist a typed `project_work_context` record for each active client window, including a unique identifier, `surface`, `window_id`, `project_id`, `lease_expires_at`, `created_at`, and `updated_at`. The `projects` table SHALL remain limited to project identity and SHALL NOT become the source of truth for active working context. The backend SHALL compute `lease_expires_at` from its own current time using a two-minute lease duration and SHALL NOT trust clients to provide an absolute expiry timestamp.
 
-#### Scenario: Web runtime records its active project
-- **WHEN** the web runtime finishes bootstrap for its configured project
-- **THEN** the backend persists or updates one work-context row for the synthetic web window identity that points at the configured project and includes a non-expired lease
-
 #### Scenario: Client sends a lease-related context request
 - **WHEN** a client asks the backend to create, switch, or renew a project work context
 - **THEN** the backend computes the resulting `lease_expires_at` from backend time plus two minutes instead of accepting a client-supplied absolute expiration
@@ -35,7 +31,7 @@ The system SHALL allow at most one non-expired active work context per `(surface
 - **THEN** the client-facing response reports only that the project is occupied and the backend logs identify the owning `surface` and `window_id`
 
 ### Requirement: System SHALL ignore expired work contexts during conflict detection
-The system SHALL treat `lease_expires_at` as the boundary for active ownership. Project-open and project-switch checks SHALL consider only non-expired contexts, and expired rows SHALL NOT block a new context from claiming the project. Clients SHALL renew active leases every 30 seconds, and bootstrap, open, and switch operations SHALL immediately refresh the lease as part of establishing the context.
+The system SHALL treat `lease_expires_at` as the boundary for active ownership. Project-open and project-switch checks SHALL consider only non-expired contexts, and expired rows SHALL NOT block a new context from claiming the project. Clients SHALL renew active leases every 30 seconds, and open and switch operations SHALL immediately refresh the lease as part of establishing the context.
 
 #### Scenario: Expired context exists for requested project
 - **WHEN** a caller requests a project whose only matching work-context rows have `lease_expires_at` earlier than the current backend time
@@ -46,7 +42,7 @@ The system SHALL treat `lease_expires_at` as the boundary for active ownership. 
 - **THEN** the backend extends the same row's lease rather than creating a duplicate active context
 
 #### Scenario: Context-establishing action refreshes the lease immediately
-- **WHEN** the backend handles bootstrap, open, or switch for a client window
+- **WHEN** the backend handles open or switch for a client window
 - **THEN** it writes a fresh non-expired lease for that context during the same operation instead of waiting for the next 30-second renewal tick
 
 ### Requirement: System SHALL retain expired contexts temporarily without keeping them active
