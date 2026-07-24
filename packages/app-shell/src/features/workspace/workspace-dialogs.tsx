@@ -145,7 +145,7 @@ function WorkspaceEntityDialog({ dialog, onOpenChange }: { dialog: DialogState; 
     fields = [];
     submit = async () => {
       if (!dialog.entity) {
-        await createSession.mutateAsync({ taskId: dialog.taskId });
+        await createSession.mutateAsync({ taskId: dialog.taskId, agentCli: "open_code" });
       }
     };
   }
